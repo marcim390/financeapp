@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { LandingPage } from './components/LandingPage';
 import { LoginPage } from './components/Auth/LoginPage';
 import { RegisterPage } from './components/Auth/RegisterPage';
+import SetPasswordPage from './components/Auth/SetPasswordPage';
 import { FinanceApp } from './components/FinanceApp';
 
 function App() {
@@ -15,11 +16,13 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
 
-          {/* Rotas protegidas na raiz */}
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/auth/set-password" element={<SetPasswordPage />} />
+
+          {/* Rotas protegidas */}
           <Route
-            path="/*"
+            path="/app/*"
             element={
               <ProtectedRoute>
                 <FinanceApp />

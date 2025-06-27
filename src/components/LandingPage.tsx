@@ -303,7 +303,7 @@ export function LandingPage() {
               
               <div className="text-center mb-8">
                 <h3 className="text-2xl font-bold mb-2">Plano Premium</h3>
-                <div className="text-4xl font-bold mb-2">R$ 13,90</div>
+                <div className="text-4xl font-bold mb-2">R$ 19,90</div>
                 <p className="text-blue-100">por mês</p>
               </div>
               

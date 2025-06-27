@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, User, Settings, Plus, Bell, Crown, LogOut } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotifications } from '../hooks/useNotifications';
 
 interface HeaderProps {
   onAddExpense: () => void;
@@ -12,28 +13,9 @@ interface HeaderProps {
 }
 
 export function Header({ onAddExpense, onSettings, onNotificationSettings, onUpgrade, onProfileSettings }: HeaderProps) {
-  const { currentView, setCurrentView, users, currentUser, setCurrentUser, recurringExpenses, notificationSettings } = useApp();
+  const { currentView, setCurrentView, users, currentUser, setCurrentUser } = useApp();
   const { profile, couple, signOut } = useAuth();
-
-  const currentUserData = users.find(u => u.id === currentUser);
-
-  // Count pending notifications
-  const filteredRecurringExpenses = currentView === 'individual' 
-    ? recurringExpenses.filter(e => e.person === currentUser || e.person === 'shared')
-    : recurringExpenses;
-
-  const pendingNotifications = filteredRecurringExpenses.filter(expense => {
-    if (!expense.isActive || !notificationSettings.enabled) return false;
-    const daysUntilDue = Math.ceil((new Date(expense.nextDueDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilDue <= notificationSettings.daysBeforeDue && daysUntilDue >= 0;
-  }).length;
-
-  const overdueExpenses = filteredRecurringExpenses.filter(expense => {
-    if (!expense.isActive) return false;
-    return new Date(expense.nextDueDate) < new Date();
-  }).length;
-
-  const totalAlerts = pendingNotifications + overdueExpenses;
+  const { notificationCount } = useNotifications();
 
   const handleSignOut = async () => {
     await signOut();
@@ -138,9 +120,9 @@ export function Header({ onAddExpense, onSettings, onNotificationSettings, onUpg
               className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
             >
               <Bell size={20} />
-              {totalAlerts > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  {totalAlerts > 9 ? '9+' : totalAlerts}
+              {notificationCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                  {notificationCount > 99 ? '99+' : notificationCount}
                 </span>
               )}
             </button>

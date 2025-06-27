@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { DollarSign, Eye, EyeOff, Mail, Lock, User, ArrowLeft, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const { signUp, loading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { signUp, completeUserRegistration, loading } = useAuth();
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
+    email: searchParams.get('email') || '',
     password: '',
     confirmPassword: '',
   });
@@ -18,6 +19,9 @@ export function RegisterPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [emailConfirmationRequired, setEmailConfirmationRequired] = useState(false);
+
+  // Check if this is a completion flow (user invited)
+  const isCompletionFlow = searchParams.has('email') && searchParams.has('token');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +55,22 @@ export function RegisterPage() {
 
     try {
       console.log('Submitting registration form...');
-      const { error } = await signUp(formData.email.trim(), formData.password, formData.fullName.trim());
+      
+      let result;
+      
+      if (isCompletionFlow) {
+        // Complete registration for invited user
+        result = await completeUserRegistration(
+          formData.email.trim(), 
+          formData.password, 
+          formData.fullName.trim()
+        );
+      } else {
+        // Normal signup flow
+        result = await signUp(formData.email.trim(), formData.password, formData.fullName.trim());
+      }
+
+      const { error } = result;
 
       if (error) {
         console.error('Registration error:', error);
@@ -71,7 +90,7 @@ export function RegisterPage() {
         console.log('Registration successful');
         setSuccess(true);
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/app/dashboard');
         }, 2000);
       }
     } catch (err) {
@@ -128,7 +147,9 @@ export function RegisterPage() {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <Check className="text-green-600" size={32} />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Conta criada com sucesso!</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              {isCompletionFlow ? 'Cadastro finalizado com sucesso!' : 'Conta criada com sucesso!'}
+            </h1>
             <p className="text-gray-600 mb-6">
               Bem-vindo ao FinanceApp! Você será redirecionado em instantes...
             </p>
@@ -143,14 +164,16 @@ export function RegisterPage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         {/* Back to Home */}
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-8 transition-colors"
-          disabled={isLoading}
-        >
-          <ArrowLeft size={20} />
-          <span>Voltar ao início</span>
-        </button>
+        {!isCompletionFlow && (
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 mb-8 transition-colors"
+            disabled={isLoading}
+          >
+            <ArrowLeft size={20} />
+            <span>Voltar ao início</span>
+          </button>
+        )}
 
         {/* Register Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
@@ -162,8 +185,15 @@ export function RegisterPage() {
               </div>
               <span className="text-2xl font-bold text-gray-900">FinanceApp</span>
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Crie sua conta grátis</h1>
-            <p className="text-gray-600">Comece a controlar suas finanças hoje mesmo</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {isCompletionFlow ? 'Finalize seu cadastro' : 'Crie sua conta grátis'}
+            </h1>
+            <p className="text-gray-600">
+              {isCompletionFlow 
+                ? 'Defina sua senha para acessar sua conta' 
+                : 'Comece a controlar suas finanças hoje mesmo'
+              }
+            </p>
           </div>
 
           {/* Error Message */}
@@ -209,7 +239,7 @@ export function RegisterPage() {
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="seu@email.com"
                   required
-                  disabled={isLoading}
+                  disabled={isLoading || isCompletionFlow}
                 />
               </div>
             </div>
@@ -271,17 +301,19 @@ export function RegisterPage() {
             </div>
 
             {/* Terms */}
-            <div className="text-sm text-gray-600">
-              Ao criar uma conta, você concorda com nossos{' '}
-              <Link to="/terms" className="text-blue-600 hover:text-blue-700">
-                Termos de Uso
-              </Link>{' '}
-              e{' '}
-              <Link to="/privacy" className="text-blue-600 hover:text-blue-700">
-                Política de Privacidade
-              </Link>
-              .
-            </div>
+            {!isCompletionFlow && (
+              <div className="text-sm text-gray-600">
+                Ao criar uma conta, você concorda com nossos{' '}
+                <Link to="/terms" className="text-blue-600 hover:text-blue-700">
+                  Termos de Uso
+                </Link>{' '}
+                e{' '}
+                <Link to="/privacy" className="text-blue-600 hover:text-blue-700">
+                  Política de Privacidade
+                </Link>
+                .
+              </div>
+            )}
 
             {/* Submit Button */}
             <button
@@ -292,26 +324,28 @@ export function RegisterPage() {
               {isLoading ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Criando conta...</span>
+                  <span>{isCompletionFlow ? 'Finalizando...' : 'Criando conta...'}</span>
                 </>
               ) : (
-                <span>Criar conta grátis</span>
+                <span>{isCompletionFlow ? 'Finalizar cadastro' : 'Criar conta grátis'}</span>
               )}
             </button>
           </form>
 
           {/* Login Link */}
-          <div className="text-center mt-6 pt-6 border-t border-gray-200">
-            <p className="text-gray-600">
-              Já tem uma conta?{' '}
-              <Link
-                to="/login"
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Faça login
-              </Link>
-            </p>
-          </div>
+          {!isCompletionFlow && (
+            <div className="text-center mt-6 pt-6 border-t border-gray-200">
+              <p className="text-gray-600">
+                Já tem uma conta?{' '}
+                <Link
+                  to="/login"
+                  className="text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  Faça login
+                </Link>
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

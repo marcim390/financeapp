@@ -19,18 +19,19 @@ export function LoginPage() {
     setFormLoading(true);
     setError('');
 
-    console.log('Tentando login com:', formData); // <-- log antes do signIn
+    console.log('Tentando login com:', formData);
 
     try {
       const result = await signIn(formData.email, formData.password);
-      console.log('Resultado do signIn:', result); // <-- log após signIn
+      console.log('Resultado do signIn:', result);
 
       const { error } = result;
 
       if (error) {
         setError('Email ou senha incorretos. Tente novamente.');
       } else {
-        navigate('/dashboard');
+        // Redirect to dashboard specifically
+        navigate('/app/dashboard');
       }
     } catch (err) {
       console.error('Login error:', err);

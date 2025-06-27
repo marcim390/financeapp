@@ -11,7 +11,6 @@ import { SubscriptionModal } from './SubscriptionModal';
 import { ProfileSettings } from './ProfileSettings';
 import { AdminPanel } from './AdminPanel';
 import { AppProvider } from '../context/AppContext';
-import { useNotifications } from '../hooks/useNotifications';
 import { useAuth } from '../contexts/AuthContext';
 import { BarChart3, List, Settings, Home, Clock, Bell, Users, Crown } from 'lucide-react';
 import { Expense, Category } from '../types';
@@ -33,15 +32,12 @@ function FinanceAppContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Initialize notifications
-  useNotifications();
-
   const handleAddExpense = async () => {
     // Check transaction limit for free users
     if (profile?.plan_type === 'free') {
       const canAdd = await checkTransactionLimit();
       if (!canAdd) {
-        setShowLimitModal(true); // Exibe apenas o modal de limite atingido
+        setShowLimitModal(true);
         return;
       }
     }
@@ -112,11 +108,11 @@ function FinanceAppContent() {
                         if (isLocked) {
                           setShowSubscriptionModal(true);
                         } else {
-                          navigate(`/${item.id}`);
+                          navigate(`/app/${item.id}`);
                         }
                       }}
                       className={`w-full flex items-center justify-between px-4 py-3 rounded-lg text-left transition-colors ${
-                        location.pathname === `/${item.id}` && !isLocked
+                        location.pathname === `/app/${item.id}` && !isLocked
                           ? 'bg-blue-50 text-blue-700 border-blue-200'
                           : isLocked
                           ? 'text-gray-400 hover:bg-gray-50'
@@ -143,7 +139,7 @@ function FinanceAppContent() {
         {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto">
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Navigate to="dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/expenses" element={<ExpenseList onEditExpense={handleEditExpense} />} />
             <Route 
@@ -151,7 +147,7 @@ function FinanceAppContent() {
               element={
                 profile?.plan_type === 'premium' ? 
                 <RecurringExpenses /> : 
-                <Navigate to="/dashboard" replace />
+                <Navigate to="dashboard" replace />
               } 
             />
             <Route path="/categories" element={
@@ -166,7 +162,7 @@ function FinanceAppContent() {
                 }}
                 onDeleteCategory={(id) => {
                   if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
-                    deleteCategory(id);
+                    // deleteCategory(id);
                   }
                 }}
               />
@@ -174,7 +170,7 @@ function FinanceAppContent() {
             {profile?.is_admin && (
               <Route path="/admin" element={<AdminPanel />} />
             )}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="dashboard" replace />} />
           </Routes>
         </main>
       </div>
