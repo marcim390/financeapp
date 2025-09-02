@@ -193,7 +193,7 @@ export function LandingPage() {
             </div>
             {!user && !loading && (
               <p className="text-sm text-gray-500 mt-4">
-                ✨ Grátis para sempre • 💳 Sem cartão de crédito • 🚀 Comece em 2 minutos
+                ✨ Inicie grátis • 💳 Sem cartão de crédito • 🚀 Comece em 2 minutos
               </p>
             )}
           </div>
