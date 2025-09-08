@@ -113,12 +113,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     try {
+      // Load expenses for current user and their couple if exists
+      let query = supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', user.id)
+
+      // If user is in a couple, also load partner's expenses
+      if (couple) {
+    try {
       const { data, error } = await supabase
         .from('expenses')
         .select('*')
         .eq('user_id', user.id)
         .order('date', { ascending: false });
 
+        query = query.or(`user_id.eq.${user.id},user_id.eq.${couple.partner.id}`)
+      }
+
+      const { data, error } = await query.order('date', { ascending: false })
+
+      if (error) {
+        console.error('Error loading expenses:', error)
+        return
+      }
+
+      const formattedExpenses: Expense[] = data.map(expense => ({
       if (error) {
         console.error('Error loading expenses:', error);
         return;
@@ -137,7 +157,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setExpenses(formattedExpenses);
     } catch (error) {
       console.error('Error loading expenses:', error);
-    }
+    } 
   };
 
   const loadCategories = async () => {
@@ -172,12 +192,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     try {
+      // Load recurring expenses for current user and their couple if exists
+      let query = supabase
+        .from('recurring_expenses')
+        .select('*')
+        .eq('user_id', user.id)
+
+      // If user is in a couple, also load partner's recurring expenses
+      if (couple) {
+    try {
       const { data, error } = await supabase
         .from('recurring_expenses')
         .select('*')
         .eq('user_id', user.id)
         .order('next_due_date');
 
+        query = query.or(`user_id.eq.${user.id},user_id.eq.${couple.partner.id}`)
+      }
+
+      const { data, error } = await query.order('next_due_date')
+
+      if (error) {
+        console.error('Error loading recurring expenses:', error)
+        return
+      }
+
+      const formattedRecurringExpenses: RecurringExpense[] = data.map(expense => ({
       if (error) {
         console.error('Error loading recurring expenses:', error);
         return;
@@ -201,7 +241,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setRecurringExpenses(formattedRecurringExpenses);
     } catch (error) {
       console.error('Error loading recurring expenses:', error);
-    }
+    } 
   };
 
   const addExpense = async (expense: Expense) => {

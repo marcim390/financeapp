@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-// import { supabase } from '../../lib/supabase';
+import { DollarSign } from 'lucide-react';
 import { Mail, Lock, Save } from 'lucide-react';
 
 export default function SetPasswordPage() {
@@ -8,6 +8,7 @@ export default function SetPasswordPage() {
   const navigate = useNavigate();
   const email = searchParams.get('email') || '';
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -16,7 +17,7 @@ export default function SetPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!email) {
+    if (!email) { 
       setError('E-mail não encontrado no link.');
       return;
     }
@@ -29,15 +30,21 @@ export default function SetPasswordPage() {
       return;
     }
     setLoading(true);
-    // Chama apenas a Edge Function para definir a senha do usuário já existente
+    
     try {
-      const response = await fetch('https://inzvsgfsxgdyxoirketi.supabase.co/functions/v1/set-password', {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      if (!supabaseUrl) {
+        throw new Error('Configuração do Supabase não encontrada')
+      }
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/set-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const result = await response.json();
-      if (!response.ok || !result.success) {
+        body: JSON.stringify({ email, password, fullName })
+      })
+      
+      const result = await response.json()
+      if (!response.ok || !result.success) { 
         setError(result.error || 'Erro ao definir senha.');
         setLoading(false);
         return;
@@ -45,7 +52,7 @@ export default function SetPasswordPage() {
       setSuccess(true);
       setLoading(false);
       setTimeout(() => navigate('/login'), 2000);
-    } catch (err) {
+    } catch (err) { 
       setError('Erro inesperado ao definir senha.');
       setLoading(false);
     }
@@ -54,7 +61,17 @@ export default function SetPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-purple-100 p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-8">
-        <h2 className="text-2xl font-bold text-center mb-6 text-blue-700">Definir Nova Senha</h2>
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <DollarSign className="text-white" size={24} />
+            </div>
+            <span className="text-2xl font-bold text-gray-900">FinanceApp</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Definir Nova Senha</h1>
+          <p className="text-gray-600">Complete seu cadastro definindo uma senha</p>
+        </div>
+        
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
@@ -65,6 +82,18 @@ export default function SetPasswordPage() {
                 value={email}
                 disabled
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo</label>
+            <div className="relative">
+              <input
+                type="text"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Seu nome completo"
               />
             </div>
           </div>

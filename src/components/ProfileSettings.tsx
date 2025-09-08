@@ -27,7 +27,7 @@ interface Invitation {
 export function ProfileSettings({ onClose }: ProfileSettingsProps) {
   const { profile, couple, updateProfile, sendCoupleInvitation, removeCoupleRelationship, acceptCoupleInvitation } = useAuth();
   const { notificationSettings, updateNotificationSettings } = useApp();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('');
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'relationship'>('profile');
@@ -35,7 +35,8 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
   const [sentInvitations, setSentInvitations] = useState<Invitation[]>([]);
   const [acceptedInvitations, setAcceptedInvitations] = useState<Invitation[]>([]);
   const [inviteSuccess, setInviteSuccess] = useState(false);
-  const [formData, setFormData] = useState({
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [formData, setFormData] = useState({ 
     full_name: profile?.full_name || '',
     phone: profile?.phone || '',
     address: profile?.address || '',
@@ -46,7 +47,7 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
 
   useEffect(() => {
     if (profile) {
-      fetchAllInvitations();
+      fetchAllInvitations()
     }
   }, [profile]);
 
@@ -54,7 +55,7 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
   const fetchAllInvitations = async () => {
     if (!profile) return;
     try {
-      // Convites recebidos (pendentes)
+      // Convites recebidos (pendentes) 
       const { data: pending, error: errorPending } = await supabase
         .from('invitations')
         .select(`
@@ -70,7 +71,7 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
         .eq('recipient_email', profile.email)
         .eq('status', 'pending')
         .gt('expires_at', new Date().toISOString());
-      setPendingInvitations(pending || []);
+      setPendingInvitations(pending || [])
       if (errorPending) console.error('Error fetching pending invitations:', errorPending);
 
       // Convites recebidos (aceitos)
@@ -89,7 +90,7 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
         .eq('recipient_email', profile.email)
         .eq('status', 'accepted');
       setAcceptedInvitations(accepted || []);
-      if (errorAccepted) console.error('Error fetching accepted invitations:', errorAccepted);
+      if (errorAccepted) console.error('Error fetching accepted invitations:', errorAccepted)
 
       // Convites enviados
       const { data: sent, error: errorSent } = await supabase
@@ -106,11 +107,11 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
         .eq('sender_id', profile.id)
         .order('created_at', { ascending: false });
       setSentInvitations(sent || []);
-      if (errorSent) console.error('Error fetching sent invitations:', errorSent);
+      if (errorSent) console.error('Error fetching sent invitations:', errorSent)
     } catch (error) {
-      console.error('Error fetching invitations:', error);
+      console.error('Error fetching invitations:', error)
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,7 +142,8 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
 
   const handleSendInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setInviteLoading(true)
+    setLoading(true)
     setInviteSuccess(false);
 
     try {
@@ -149,6 +151,7 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
 
       if (error) {
         alert(error.message || 'Erro ao enviar convite. Tente novamente.');
+        setInviteLoading(false)
       } else {
         setInviteSuccess(true);
         setInviteEmail('');
@@ -157,15 +160,19 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
         // Show success message for 3 seconds
         setTimeout(() => {
           setInviteSuccess(false);
+          setInviteLoading(false)
         }, 3000);
+        
+        // Refresh invitations list
+        await fetchAllInvitations()
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
       alert('Erro inesperado ao enviar convite. Tente novamente.');
+      setInviteLoading(false)
     } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(false)
+    } }
 
   const handleAcceptInvitation = async (invitationId: string) => {
     setLoading(true);
@@ -178,10 +185,11 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
     if (error) {
       alert('Erro ao aceitar convite. Tente novamente.');
     } else {
-      alert('Convite aceito com sucesso!');
-      fetchAllInvitations();
+      alert('Convite aceito com sucesso!')
+      await fetchAllInvitations()
     }
 
+    setLoading(false)
     setLoading(false);
   };
 
@@ -197,7 +205,30 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
       } else {
         alert('Convite rejeitado.');
         fetchPendingInvitations();
+      } 
+    } catch (error) {
+      alert('Erro ao rejeitar convite.');
+    }
+  };
+
+  const handleCancelInvitation = async (invitationId: string, recipientEmail: string) => {
+    if (!window.confirm('Tem certeza que deseja cancelar este convite?')) return
+    
+    setLoading(true)
+    try {
+      const { error } = await supabase
+        .from('invitations')
+        .delete()
+        .eq('id', invitationId)
+        .eq('sender_id', profile?.id)
+
+      if (error) {
+        alert('Erro ao cancelar convite.')
+      } else {
+        alert('Convite cancelado com sucesso.')
+        await fetchAllInvitations()
       }
+    } catch (error) {
     } catch (error) {
       alert('Erro ao rejeitar convite.');
     }
@@ -205,6 +236,7 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
 
   const handleRemoveCouple = async () => {
     if (!window.confirm('Tem certeza que deseja desfazer a relação com seu parceiro(a)?')) {
+      setLoading(false)
       return;
     }
 
@@ -215,6 +247,7 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
       alert('Erro ao remover relação. Tente novamente.');
     } else {
       alert('Relação removida com sucesso!');
+      await fetchAllInvitations()
     }
 
     setLoading(false);
@@ -704,7 +737,7 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
                             onClick={async () => {
                               if (window.confirm('Deseja cancelar este convite?')) {
                                 setLoading(true);
-                                const { error } = await supabase
+                                await handleCancelInvitation(invitation.id, invitation.recipient_email)
                                   .from('invitations')
                                   .delete()
                                   .eq('id', invitation.id);
@@ -713,7 +746,6 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
                                   alert('Erro ao cancelar convite.');
                                 } else {
                                   fetchAllInvitations();
-                                }
                               }
                             }}
                             className="flex items-center gap-1 bg-red-100 text-red-700 border border-red-300 px-3 py-1 rounded text-xs hover:bg-red-200 transition-colors shadow"
@@ -801,7 +833,7 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
                         <button
                           type="submit"
                           disabled={loading}
-                          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                          className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
                         >
                           {loading ? 'Enviando...' : 'Enviar Convite'}
                         </button>

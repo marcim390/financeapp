@@ -16,7 +16,7 @@ export function ExpenseForm({ expense, onClose, onSave }: ExpenseFormProps) {
   const [formData, setFormData] = useState({
     description: '',
     amount: '',
-    category: '',
+    category: '', 
     date: new Date().toISOString().split('T')[0],
     person: currentView === 'individual' ? currentUser : 'person1',
     type: 'expense' as 'expense' | 'income',
@@ -31,9 +31,25 @@ export function ExpenseForm({ expense, onClose, onSave }: ExpenseFormProps) {
         date: expense.date,
         person: expense.person,
         type: expense.type,
+      })
+      setFormData({
+        description: expense.description,
+        amount: expense.amount.toString(),
+        category: expense.category,
+        date: expense.date,
+        person: expense.person,
+        type: expense.type,
       });
     }
-  }, [expense]);
+  }, [expense])
+
+  // Set default person based on current view and user
+  useEffect(() => {
+    if (!expense && currentView === 'individual') {
+      setFormData(prev => ({ ...prev, person: currentUser }))
+    }
+  }, [currentView, currentUser, expense])
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

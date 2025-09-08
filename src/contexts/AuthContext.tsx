@@ -375,7 +375,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const sendCoupleInvitation = async (email: string) => {
     try {
       // Chama a Edge Function invite-user
-      console.log('Sending couple invitation to:', email);
+      console.log('Sending couple invitation to:', email)
       // Obtém o access_token da sessão atual (Supabase v2)
       const { data: { session } } = await supabase.auth.getSession();
       const accessToken = session?.access_token || '';
@@ -389,33 +389,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           },
           body: JSON.stringify({
             email,
-            invitedById: user?.id,
-            invitedByIsPremium: profile?.plan_type === 'premium',
+            invitedById: user?.id
           }),
         }
       );
-      console.log('Request sent to:', `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`);
-      console.log('Response status:', response.status);
+      
       let result: any = null;
       try {
         result = await response.json();
       } catch (e) {
-        console.error('Error parsing JSON response:', e);
-        return { error: 'Erro ao interpretar resposta da função (possível erro de CORS, backend ou deploy da função).' };
+        console.error('Error parsing JSON response:', e)
+        return { error: 'Erro ao interpretar resposta da função.' }
       }
-      console.log('Invitation response:', result);
+      
       if (!response.ok) {
-        console.error('Error sending invitation:', result?.error, 'Status:', response.status, 'Response body:', result);
-        return { error: result?.error || 'Erro ao convidar usuário' };
+        console.error('Error sending invitation:', result?.error)
+        return { error: result?.error || 'Erro ao convidar usuário' }
       }
-      return { error: null };
+      
+      // Refresh profile data to get updated invitations
+      await refreshProfile()
+      
+      return { error: null, data: result }
     } catch (error) {
-      console.error('Error sending invitation (catch):', error, {
-        email,
-        invitedById: user?.id,
-        invitedByIsPremium: profile?.plan_type === 'premium',
-      });
-      return { error: 'Erro inesperado ao enviar convite' };
+      console.error('Error sending invitation (catch):', error)
+      return { error: 'Erro inesperado ao enviar convite' }
+    }
+  }
+
+  const cancelCoupleInvitation = async (invitationId: string, recipientEmail: string) => {
+    try {
+      // Delete the invitation
+      const { error: deleteError } = await supabase
+        .from('invitations')
+        .delete()
+        .eq('id', invitationId)
+        .eq('sender_id', user?.id)
+
+      if (deleteError) {
+        console.error('Error deleting invitation:', deleteError)
+        return { error: 'Erro ao cancelar convite' }
+      }
+
+      // Try to cleanup orphaned user (only if they have no accepted invitations or expenses)
+      try {
+        await supabase.rpc('cleanup_orphaned_user', {
+          _user_email: recipientEmail
+        })
+      } catch (cleanupError) {
+        console.warn('Could not cleanup orphaned user:', cleanupError)
+        // Don't fail the cancellation if cleanup fails
+      }
+
+      // Refresh profile data
+      await refreshProfile()
+      
+      return { error: null }
+    } catch (error) {
+      console.error('Error canceling invitation:', error)
+      return { error: 'Erro inesperado ao cancelar convite' }
     }
   };
 
@@ -423,7 +455,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data, error } = await supabase.rpc('accept_couple_invitation', {
         invitation_id: invitationId
-      });
+      })
 
       if (error) {
         console.error('Error accepting invitation:', error);
@@ -435,11 +467,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       await refreshProfile();
-      return { error: null };
+      return { error: null }
     } catch (error) {
-      console.error('Error accepting invitation:', error);
-      return { error: { message: 'Erro inesperado ao aceitar convite' } };
-    }
+      console.error('Error accepting invitation:', error)
+      return { error: { message: 'Erro inesperado ao aceitar convite' } }
+    } 
   };
 
   const removeCoupleRelationship = async () => {
@@ -469,7 +501,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase.rpc('check_transaction_limit');
       
       if (error) {
-        console.error('Error checking transaction limit:', error);
+        console.error('Error checking transaction limit:', error)
         return false;
       }
 
@@ -485,7 +517,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.rpc('increment_transaction_count');
       
       if (error) {
-        console.error('Error incrementing transaction count:', error);
+        console.error('Error incrementing transaction count:', error)
       } else {
         await refreshProfile();
       }
@@ -496,23 +528,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const completeUserRegistration = async (email: string, password: string, fullName: string) => {
     try {
-      console.log('Completing user registration for:', email);
+      console.log('Completing user registration for:', email)
       
-      const { data, error } = await supabase.rpc('complete_user_registration', {
+      const { data, error } = await supabase.rpc('complete_user_registration_improved', {
         user_email: email,
         user_password: password,
         full_name: fullName
-      });
+      })
 
-      console.log('Registration completion response:', { data, error });
+      console.log('Registration completion response:', { data, error })
 
       if (error) {
-        console.error('Error completing registration:', error);
-        return { error: { message: error.message || 'Erro ao finalizar cadastro' } };
+        console.error('Error completing registration:', error)
+        return { error: { message: error.message || 'Erro ao finalizar cadastro' } }
       }
 
-      if (data && data.error) {
-        return { error: { message: data.error } };
+      if (data && !data.success) {
+        return { error: { message: data.error } }
       }
 
       return { error: null };
@@ -537,6 +569,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshProfile,
         sendCoupleInvitation,
         acceptCoupleInvitation,
+        cancelCoupleInvitation,
         removeCoupleRelationship,
         checkTransactionLimit,
         incrementTransactionCount,

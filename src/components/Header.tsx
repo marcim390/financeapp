@@ -16,7 +16,7 @@ export function Header({ onAddExpense, onSettings, onNotificationSettings, onUpg
   const { currentView, setCurrentView, users, currentUser, setCurrentUser } = useApp();
   const { profile, couple, signOut } = useAuth();
   const { notificationCount } = useNotifications();
-
+  
   const handleSignOut = async () => {
     await signOut();
   };
@@ -31,7 +31,7 @@ export function Header({ onAddExpense, onSettings, onNotificationSettings, onUpg
 
   const getDisplayName = () => {
     if (currentView === 'individual') {
-      return `${getGenderEmoji(profile?.gender)} ${profile?.full_name || 'Usuário'}`;
+      return `${getGenderEmoji(profile?.gender)} ${profile?.full_name || 'Usuário'}`
     }
     return couple ? `${getGenderEmoji(profile?.gender)} ${profile?.full_name} & ${getGenderEmoji(couple.partner.gender)} ${couple.partner.full_name}` : `${getGenderEmoji(profile?.gender)} ${profile?.full_name}`;
   };
@@ -87,7 +87,7 @@ export function Header({ onAddExpense, onSettings, onNotificationSettings, onUpg
               <button
                 onClick={() => setCurrentView('couple')}
                 disabled={!couple}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${ 
                   currentView === 'couple'
                     ? 'bg-white text-blue-600 shadow-sm'
                     : couple 
@@ -97,7 +97,7 @@ export function Header({ onAddExpense, onSettings, onNotificationSettings, onUpg
               >
                 <Users size={16} />
                 <span>Casal</span>
-              </button>
+              </button> 
             </div>
 
             {/* Current User Display */}
