@@ -18,6 +18,12 @@ interface Profile {
   monthly_transactions_used: number;
   last_transaction_reset: string | null;
   is_admin: boolean;
+  notification_settings?: {
+    emailNotifications: boolean;
+    pushNotifications: boolean;
+    budgetAlerts: boolean;
+    recurringReminders: boolean;
+  };
 }
 
 interface Couple {

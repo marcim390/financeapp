@@ -16,10 +16,7 @@ import { BarChart3, List, Settings, Home, Clock, Bell, Users, Crown } from 'luci
 import { Expense, Category } from '../types';
 import { CategoryListPage } from './CategoryListPage';
 
-type View = 'dashboard' | 'expenses' | 'recurring' | 'settings' | 'admin';
-
 function FinanceAppContent() {
-  const [currentView, setCurrentView] = useState<View>('dashboard');
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
@@ -29,6 +26,7 @@ function FinanceAppContent() {
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const { profile, checkTransactionLimit, incrementTransactionCount } = useAuth();
+  const { deleteCategory } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -162,7 +160,7 @@ function FinanceAppContent() {
                 }}
                 onDeleteCategory={(id) => {
                   if (window.confirm('Tem certeza que deseja excluir esta categoria?')) {
-                    // deleteCategory(id);
+                    deleteCategory(id);
                   }
                 }}
               />
