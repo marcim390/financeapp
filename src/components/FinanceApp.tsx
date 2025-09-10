@@ -10,7 +10,7 @@ import { NotificationSettings } from './NotificationSettings';
 import { SubscriptionModal } from './SubscriptionModal';
 import ProfileSettings from './ProfileSettings';
 import { AdminPanel } from './AdminPanel';
-import { AppProvider } from '../context/AppContext';
+import { AppProvider, useApp } from '../context/AppContext';
 import { useAuth } from '../contexts/AuthContext';
 import { BarChart3, List, Settings, Home, Clock, Bell, Users, Crown } from 'lucide-react';
 import { Expense, Category } from '../types';
