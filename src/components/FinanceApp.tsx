@@ -8,7 +8,7 @@ import { CategoryManager } from './CategoryManager';
 import { RecurringExpenses } from './RecurringExpenses';
 import { NotificationSettings } from './NotificationSettings';
 import { SubscriptionModal } from './SubscriptionModal';
-import { ProfileSettings } from './ProfileSettings';
+import ProfileSettings from './ProfileSettings';
 import { AdminPanel } from './AdminPanel';
 import { AppProvider } from '../context/AppContext';
 import { useAuth } from '../contexts/AuthContext';
